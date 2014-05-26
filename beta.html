@@ -1,0 +1,157 @@
+<html>
+<body>
+
+
+<script src='jq.js'></script>
+<script>
+
+function count_cores (){
+	no_cores_result = 4 ;     // proof of concept pocitania jadier: cores_est.js
+	return no_cores_result
+}
+
+stop_killing = false
+//get,send,ping,freeze
+	
+	
+	function freeze(){
+		stop_killing = true; // nechceme zastavit pocas ukladania, ked sa uz workre nehlasia k zivotu
+		for (c=1;c<=no_cores;c++){
+			workers[c].postMessage({"cmd":"freeze"})
+		}
+		// zdrzat browser 
+		d("Start")
+		//TODO prepisat do verzie bez jQ
+     _devnull = $.ajax({
+        type: "GET",
+        url: "wait2s.php",
+        async: false,
+    }).responseText;
+     	d("Still open")
+
+	}
+
+	window.onbeforeunload = freeze
+	___failsafe_sig = false;
+
+	function ___failsafe(){
+		for (a=1;a<=no_cores;a++){
+			workers[a].terminate()
+		}
+		___failsafe_sig = true;
+		d("[FAILSAFE]")
+	}
+
+
+	function d(msg){
+		console.log ("[SYS]"+msg.toString())
+	}
+	function dw(msg,wid){
+		console.log("[WORKER] [",wid.toString(),"] "+msg)
+	}
+
+	function now(){
+		return (new Date).getTime()
+	}
+
+	function accept_worker_msg(message_obj){
+		wid = message_obj.data['wid']
+		cmd = message_obj.data['cmd']
+		if (cmd=='demo'){
+			document.getElementById("box"+wid).innerHTML = message_obj.data["demoval"];
+		}
+		if (cmd=='alive'){
+			last_alive[wid] = now()
+			d(wid.toString()+" reported alive")
+		}
+
+		if (cmd=='debug'){
+			dw (message_obj.data["text"],wid);
+		}
+
+		if (cmd=='store'){
+			localStorage[message_obj.data['ss_key']] = message_obj.data['ss_val']
+			localStorage['something_stored'] = "yes"
+		}
+		//write last_alive
+	}
+
+
+	
+	workers = []
+	last_alive = []
+
+	d("Check if previously set localStorage")
+	is_frozen = false;
+
+	
+	if (localStorage.getItem("no_cores") == null){
+		no_cores = count_cores()
+		localStorage.setItem ("no_cores", no_cores)
+	} else {
+		no_cores = localStorage.getItem ("no_cores")
+	}
+
+	if (localStorage.getItem("something_stored")=="yes"){ 
+		// mame nieco ulozene
+		is_frozen = true;
+		d("Found saved computation")
+		console.log(localStorage)
+
+	} else{
+		d("Nothing found")
+	}
+
+	d("Starting workers")
+	for (c=1;c<=no_cores;c++){
+		workers[c] = new Worker ('beta_worker.js')
+		workers[c].postMessage ({'cmd':'set_wid','text':c})
+		if (!is_frozen){
+			workers[c].postMessage ({'cmd':'ss_status','text':false})
+		}else{
+			// signal unfrozen, send data
+			workers[c].postMessage ({'cmd':'ss_status','text':true,'data_freeze':localStorage["freeze"+c],'data_meta':localStorage["meta"+c]})
+		}
+		workers[c].addEventListener ('message',accept_worker_msg)	
+		//workers[c].onerror = function (event) {}
+		last_alive [c] = now()
+	}
+
+	
+
+
+	function verify_alive_verify (){
+		d("Starting verify")
+		for (c=1;c<=no_cores;c++){
+			if (now() - last_alive[c] > 3000){
+				// !controlling user script
+				//workers[c].terminate()
+				
+				if (!stop_killing) {
+					d("Killing unresponsive worker "+c)
+					workers[c].terminate()
+				}
+
+			}
+		} if (!___failsafe_sig){
+		setTimeout (verify_alive_verify,3000)}
+	}
+
+	verify_alive_verify();
+</script>
+<h1> Computation demo </h1>
+Struktura: (worker ; lokalne cislo (subtask ID) ; cislo vypoctu (dispenser task ID)) <br><i>Pri restartovani vypoctu sa subtask udrzi v lokalnej pamati (cislo ostane rovnake), task ID medzicasom moze narast, kedze ine klienty si mohli vyziadat nejake dalsie ulohy)
+<table border='1'>
+	<tr><td>JOB queue worker 1</td><td id='box1'></td></tr>
+	<tr><td>JOB queue worker 2</td><td id='box2'></td></tr>
+	<tr><td>JOB queue worker 3</td><td id='box3'></td></tr>
+	<tr><td>JOB queue worker 4</td><td id='box4'></td></tr>
+</table>
+<i>Opustenie stranky je zdrzane a pri opatovnom nacitani je mozne vypocet obnovit zo starej pozicie.
+ Vacsie mnozstvo detailov je v konzole, stav lokalnej pamate sa da skontrolovat <a href='demo_localstorage.html'>tu</a></i>
+<!--
+<input type='button' onClick='___failsafe()' value='failsafe'>
+<input type='button' onClick='freeze()' value='freeze'>
+-->
+</body>
+</html>

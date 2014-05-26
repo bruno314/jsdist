@@ -1,0 +1,27 @@
+<html>
+<body>
+
+<script src='jq.js'></script>
+
+
+<script>
+	
+	function freeze(){
+		
+		
+     _devnull = $.ajax({
+        type: "GET",
+        url: "wait2s.php",
+        async: false,
+    }).responseText;
+     	d("Still open")
+
+	}
+
+	window.onbeforeunload = freeze
+
+</script>
+
+
+</body>
+</html>

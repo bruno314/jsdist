@@ -1,0 +1,34 @@
+<!-- Testovanie linearity planovaca -->
+<!--- spustane paralelne s inym standardizovane vytazujucim procesom (mimo prehliadaca); rovnake jadro (taskset)--->
+<html>
+
+<head>
+<script>
+	no_tests = 100;
+	total_sum = 0;
+	for (test_id=1;test_id<=no_tests;test_id++){
+		start = (new Date).getTime()
+		for (a=1;a<=10000000;a++){
+			fx = Math.sqrt(5678*a)
+			
+		}
+		end = (new Date).getTime()
+		console.log("end");
+		delta = end-start;
+
+		console.log (delta)
+		total_sum += delta;
+
+	}
+	avg = total_sum / no_tests;
+	console.log ("avg="+avg.toString())
+</script>
+</head>
+
+
+<body>
+
+
+
+</body>
+</html>

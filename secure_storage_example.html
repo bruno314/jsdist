@@ -1,0 +1,74 @@
+<html>
+<head>
+<script>
+
+function secure_storage () { // constructor function
+  var private_variable = 8;
+  this.create_variable = function (variable_name){
+    eval ("var "+variable_name+";")
+  };
+
+  this.set_value = function (set_key,set_value) {
+      cc = set_value;
+      eval (set_key+"=cc;")        
+  };
+
+  this.get_value = function(get_key){
+    eval ("return_what = "+get_key)
+    return return_what;
+  };
+
+}
+
+
+sst =new secure_storage()
+
+sst.wat = (function(){return this.private_variable;})
+
+
+for (key in this){
+  
+  if (key=="sst"){
+      for (wat in sst){
+        console.log(wat.toString())
+      }
+  }
+}
+
+
+/* OUTPUT LOG
+
+sst.create_variable ("vartest")
+sst.set_value ("vartest","valuetest")
+sst.vartest
+>undefined
+sst.get_value("vartest")
+>"valuetest"
+for (key in sst) {console.log (key)}
+>create_variable
+>set_value
+>get_value
+sst.hasOwnProperty("vartest")
+>false
+sst.hasOwnProperty("set_value")
+>true
+
+
+
+
+
+*/
+
+
+
+</script>
+</head>
+
+<body>
+</body>
+
+
+
+</html>
+
+
